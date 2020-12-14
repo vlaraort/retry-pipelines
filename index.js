@@ -16,6 +16,11 @@ const getPipelineData = async () => {
   return pipelineInfo;
 };
 
+const getJobsData = async () => {
+  const jobsInfo = await api.Jobs. showPipelineJobs(projectId, pipelineId);
+  return jobsInfo;
+};
+
 const retryPipeline = async () => {
   const pipelineInfo = await api.Pipelines.retry(projectId, pipelineId);
   return pipelineInfo;
@@ -25,10 +30,16 @@ const sleep = ms => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const filterJobs = jobs => {
+  console.log(jobs)
+}
+
 (async () => {
   async function run() {
     const pipelineData = await getPipelineData();
-
+    const jobsData = await getJobsData();
+    console.log(jobsData);
+    const filterJobs(jobsData);
     if (pipelineData.status === "running") {
       console.log("Pipeline running, waiting one minute to recheck status");
       // retry in 1 minute
