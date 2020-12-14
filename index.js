@@ -1,9 +1,9 @@
 const { Gitlab } = require("@gitbeaker/node");
-const { token, host } = require('./vault.js');
+const { token, host } = require("./vault.js");
 
 // Edit this variables to match your pipeline
 const projectId = "59108";
-const pipelineId = "3186956";
+const pipelineId = "3188956";
 
 const api = new Gitlab({
   host,
@@ -17,47 +17,51 @@ const getPipelineData = async () => {
 };
 
 const getJobsData = async () => {
-  const jobsInfo = await api.Jobs. showPipelineJobs(projectId, pipelineId);
+  const jobsInfo = await api.Jobs.showPipelineJobs(projectId, pipelineId);
   return jobsInfo;
 };
 
-const retryPipeline = async () => {
-  const pipelineInfo = await api.Pipelines.retry(projectId, pipelineId);
-  return pipelineInfo;
+const retryJob = async (job) => {
+  return api.Jobs.retry(projectId, job.id);
 };
 
-const sleep = ms => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
-const filterJobs = jobs => {
-  console.log(jobs)
-}
+// Filter the jobs array to get only the last one of every step
+const filterJobs = (jobs) => {
+  const maxes = {};
+  for (const job of jobs) {
+    if (!(job.name in maxes) || job.id > maxes[job.name].id) {
+      maxes[job.name] = job;
+    }
+  }
+  const filtered = Object.values(maxes);
+  return filtered;
+};
 
 (async () => {
   async function run() {
     const pipelineData = await getPipelineData();
-    const jobsData = await getJobsData();
-    console.log(jobsData);
-    const filterJobs(jobsData);
-    if (pipelineData.status === "running") {
-      console.log("Pipeline running, waiting one minute to recheck status");
+
+    if (pipelineData.status === "running" || pipelineData.status === "failed") {
+      console.log("fetching jobs status")
+      const jobsData = await getJobsData();
+      const jobs = filterJobs(jobsData);
+      for (const job of jobs) {
+        if (job.status === "failed") {
+          console.log(`retrying ${job.name} in ${job.stage} stage`);
+          await retryJob(job);
+        }
+      }
       // retry in 1 minute
-      await sleep(60000)
-      await run();
-      
-    }
-    else if (pipelineData.status === "failed") {
-      console.log("Pipeline failed!, retrying...");
-      await retryPipeline()
-      console.log("Retried")
-      await sleep(6000)
+      await sleep(60000);
       await run();
     } else {
-      console.log(`Pipeline in status ${pipelineData.status}, finishing the loop.`);
-
+      console.log("Pipeline not running. Ending script")
     }
   }
 
-  await run()
+  await run();
 })();
