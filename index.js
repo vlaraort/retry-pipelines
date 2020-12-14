@@ -39,7 +39,7 @@ const sleep = ms => {
     else if (pipelineData.status === "failed") {
       console.log("Pipeline failed!, retrying...");
       await retryPipeline()
-      console.log("Retryied")
+      console.log("Retried")
       await sleep(6000)
       await run();
     } else {
