@@ -2,13 +2,12 @@ const { Gitlab } = require("@gitbeaker/node");
 const chalk = require("chalk");
 let vault;
 try {
-  vault = require("./vault1.js");
+  vault = require("./vault.js");
  }
  catch (e) {
   console.log(chalk.red('No token found, please add a vault.js file with your Gitlab token, check the README for reference'))
   process.exit(0)
  }
-// const { token } = require("./vault1.js");
 const { start, printJobs } = require("./src/terminal.js");
 const { token } = vault;
 let projectId;
