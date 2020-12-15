@@ -1,15 +1,29 @@
 const { Gitlab } = require("@gitbeaker/node");
-const { token, host } = require("./vault.js");
+const chalk = require("chalk");
+let vault;
+try {
+  vault = require("./vault1.js");
+ }
+ catch (e) {
+  console.log(chalk.red('No token found, please add a vault.js file with your Gitlab token, check the README for reference'))
+  process.exit(0)
+ }
+// const { token } = require("./vault1.js");
+const { start, printJobs } = require("./src/terminal.js");
+const { token } = vault;
+let projectId;
+let pipelineId;
+let api;
 
-// Edit this variables to match your pipeline
-const projectId = "59108";
-const pipelineId = "3188956";
+const initApi = host => {
+  api = new Gitlab({
+    host,
+    token,
+    rejectUnauthorized: false,
+  });
+}
 
-const api = new Gitlab({
-  host,
-  token,
-  rejectUnauthorized: false,
-});
+
 
 const getPipelineData = async () => {
   const pipelineInfo = await api.Pipelines.show(projectId, pipelineId);
@@ -44,11 +58,11 @@ const filterJobs = (jobs) => {
 (async () => {
   async function run() {
     const pipelineData = await getPipelineData();
-
     if (pipelineData.status === "running" || pipelineData.status === "failed") {
-      console.log("fetching jobs status")
+      console.log("Fetching jobs status...")
       const jobsData = await getJobsData();
       const jobs = filterJobs(jobsData);
+      printJobs(jobs)
       for (const job of jobs) {
         if (job.status === "failed") {
           console.log(`retrying ${job.name} in ${job.stage} stage`);
@@ -56,12 +70,17 @@ const filterJobs = (jobs) => {
         }
       }
       // retry in 1 minute
+      console.log(`All failed jobs retried. Rechecking in one minute...`);
       await sleep(60000);
       await run();
     } else {
       console.log("Pipeline not running. Ending script")
     }
   }
-
+  const terminalInput = await start();
+  const host = terminalInput.host;
+  pipelineId = terminalInput.pipelineId;
+  projectId = terminalInput.projectId;
+  initApi(host);
   await run();
 })();
