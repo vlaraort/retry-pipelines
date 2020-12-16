@@ -78,4 +78,17 @@ module.exports = {
   printPipelineArgError: () => {
     console.log(chalk.red("Not a valid pipeline URL"));
   },
+
+  printNetworkError: () => {
+    console.log(
+      chalk.red(`
+      NETWORK ERROR
+
+      Possibles causes:
+      - Your Gitlab instance can not be accessed, are you able to reach through browser?
+      - Your token is not correct, try --reset-token parameter, check -h for info
+      - Your pipeline URL is incorrect, it should have the following format: 'https://gitlab.[yourcompany].net/[namespace]/[project]/pipelines/[id]'
+    `)
+    );
+  },
 };

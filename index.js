@@ -1,24 +1,18 @@
+#!/usr/bin/env node
+
 const { Gitlab } = require("@gitbeaker/node");
 const Token = require("./src/token.js");
 const { getArgs } = require("./src/commands.js");
 const Terminal = require("./src/terminal.js");
 const { parsePipelineUrl, isValidUrl } = require("./src/pipelineUrlParser.js");
 
-// const { start, printJobs } = require("./src/terminal.js");
-
-// let vault;
-// try {
-//   vault = require("./vault.js");
-//  }
-//  catch (e) {
-//   console.log(chalk.red('No token found, please add a vault.js file with your Gitlab token, check the README for reference'))
-//   process.exit(0)
-//  }
-
-// const { token } = vault;
 let projectId;
 let pipelineId;
 let api;
+
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 const initApi = (host, token) => {
   api = new Gitlab({
@@ -29,21 +23,30 @@ const initApi = (host, token) => {
 };
 
 const getPipelineData = async () => {
-  const pipelineInfo = await api.Pipelines.show(projectId, pipelineId);
-  return pipelineInfo;
+  try {
+    return api.Pipelines.show(projectId, pipelineId);
+  } catch (e) {
+    Terminal.printNetworkError();
+    process.exit(0);
+  }
 };
 
 const getJobsData = async () => {
-  const jobsInfo = await api.Jobs.showPipelineJobs(projectId, pipelineId);
-  return jobsInfo;
+  try {
+    return api.Jobs.showPipelineJobs(projectId, pipelineId);
+  } catch (e) {
+    Terminal.printNetworkError();
+    process.exit(0);
+  }
 };
 
 const retryJob = async (job) => {
-  return api.Jobs.retry(projectId, job.id);
-};
-
-const sleep = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  try {
+    return api.Jobs.retry(projectId, job.id);
+  } catch (e) {
+    Terminal.printNetworkError();
+    process.exit(0);
+  }
 };
 
 // Filter the jobs array to get only the last one of every step
@@ -58,35 +61,36 @@ const filterJobs = (jobs) => {
   return filtered;
 };
 
-(async () => {
-  async function run() {
-    const pipelineData = await getPipelineData();
-    if (pipelineData.status === "running" || pipelineData.status === "failed") {
-      console.log("Fetching jobs status...");
-      const jobsData = await getJobsData();
-      const jobs = filterJobs(jobsData);
-      Terminal.printJobs(jobs);
-      for (const job of jobs) {
-        if (job.status === "failed") {
-          console.log(`retrying ${job.name} in ${job.stage} stage`);
-          await retryJob(job);
-        }
+const run = async () => {
+  const pipelineData = await getPipelineData();
+  if (pipelineData.status === "running" || pipelineData.status === "failed") {
+    console.log("Fetching jobs status...");
+    const jobsData = await getJobsData();
+    const jobs = filterJobs(jobsData);
+    Terminal.printJobs(jobs);
+    for (const job of jobs) {
+      if (job.status === "failed") {
+        console.log(`retrying ${job.name} in ${job.stage} stage`);
+        await retryJob(job);
       }
-      // retry in 1 minute
-      console.log(`All failed jobs retried. Rechecking in one minute...`);
-      await sleep(60000);
-      await run();
-    } else {
-      console.log("Pipeline not running. Ending script");
     }
+    // retry in 1 minute
+    console.log(`All failed jobs retried. Rechecking in one minute...`);
+    await sleep(60000);
+    await run();
+  } else {
+    console.log("Pipeline not running. Ending script");
   }
+};
 
+(async () => {
   const args = getArgs();
   if (args.resetToken) {
     await Token.resetToken();
   } else {
     const token = await Token.checkToken();
     if (args.pipeline) {
+      // Get the pipeline URL from command line parameter
       const url = args.pipeline;
       if (!isValidUrl(url)) {
         Terminal.printPipelineArgError();
@@ -100,6 +104,7 @@ const filterJobs = (jobs) => {
         await run();
       }
     } else {
+      // no pipeline URL from command line parameter, start the wizard
       const terminalInput = await Terminal.start();
       const host = terminalInput.host;
       pipelineId = terminalInput.pipelineId;

@@ -22,7 +22,7 @@ async function checkToken() {
 }
 
 async function resetToken() {
-  token = await Terminal.resetToken();
+  const token = await Terminal.resetToken();
   setToken(token);
   console.log("Token set correctly");
   return token;
