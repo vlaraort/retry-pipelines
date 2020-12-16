@@ -1,17 +1,23 @@
 {
   "name": "retry-pipelines",
   "version": "1.0.0",
-  "description": "",
+  "description": "NPM package to retry Gitlab pipelines",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "author": "",
+  "bin": {
+    "retry-pipelines": "./index.js",
+    "rp": "./index.js"
+  },
+  "author": "Víctor Lara Ortega",
   "license": "ISC",
   "dependencies": {
     "@gitbeaker/node": "^26.0.1",
     "chalk": "^4.1.0",
-    "inquirer": "^7.3.3"
+    "commander": "^6.2.1",
+    "inquirer": "^7.3.3",
+    "node-storage": "0.0.9"
   }
 }

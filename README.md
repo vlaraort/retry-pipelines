@@ -10,8 +10,18 @@ exports.token = "mytoken";
 
 ## Installation
 
-`npm install`
+- `npm install -g retry-pipelines`
 
 ## Run
 
-`npm start`
+run `retry-pipelines` or `rp` in your terminal
+
+## Locally
+
+- Clone the repository
+- `npm install`
+- `npm start`
+
+## Help
+
+run `retry-pipelines -help` in your terminal
