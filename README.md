@@ -10,7 +10,8 @@ exports.token = "mytoken";
 
 ## Installation
 
-`npm install`
+- clone the repository
+- `npm install`
 
 ## Run
 

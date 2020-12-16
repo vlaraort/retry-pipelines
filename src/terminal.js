@@ -1,26 +1,24 @@
 const inquirer = require("inquirer");
 const chalk = require("chalk");
-
-function isValidUrl(string) {
-  try {
-    new URL(string);
-  } catch (_) {
-    return false;
-  }
-  return true;
-}
+const { parsePipelineUrl, isValidUrl } = require("./pipelineUrlParser.js");
 
 function jobMessage(job) {
   switch (job.status) {
     case "success":
-        return chalk.green(`[${job.stage.toUpperCase()}] ${job.name} => ${job.status}`)
+      return chalk.green(
+        `[${job.stage.toUpperCase()}] ${job.name} => ${job.status}`
+      );
     case "failed":
-        return chalk.red(`[${job.stage.toUpperCase()}] ${job.name} => ${job.status}`)
+      return chalk.red(
+        `[${job.stage.toUpperCase()}] ${job.name} => ${job.status}`
+      );
     default:
-        return chalk.yellow(`[${job.stage.toUpperCase()}] ${job.name} => ${job.status}`)
-
+      return chalk.yellow(
+        `[${job.stage.toUpperCase()}] ${job.name} => ${job.status}`
+      );
   }
 }
+
 module.exports = {
   start: async () => {
     const terminalOutput = await inquirer.prompt([
@@ -36,18 +34,37 @@ module.exports = {
         },
       },
     ]);
-    const url = new URL(terminalOutput.pipelineUrl);
-    const host = `${url.protocol}//${url.hostname}`;
-    const path = url.pathname.split("/");
-    const pipelineId = path[path.length - 1];
-    const projectId = encodeURI(
-      `${path[path.length - 4]}/${path[path.length - 3]}`
+    const { host, pipelineId, projectId } = parsePipelineUrl(
+      terminalOutput.pipelineUrl
     );
     return { host, pipelineId, projectId };
   },
 
-  printJobs: (jobs) => {
+  startToken: async () => {
+    const terminalOutput = await inquirer.prompt([
+      {
+        name: "token",
+        type: "input",
+        message: "No Gitlab token found, please enter a valid one:",
+      },
+    ]);
+    const { token } = terminalOutput;
+    return token;
+  },
 
+  resetToken: async () => {
+    const terminalOutput = await inquirer.prompt([
+      {
+        name: "token",
+        type: "input",
+        message: "Enter a new Gitlab token:",
+      },
+    ]);
+    const { token } = terminalOutput;
+    return token;
+  },
+
+  printJobs: (jobs) => {
     console.clear();
     console.log("CURRENT PIPELINE STATUS");
     console.log("-----------------------");
@@ -56,5 +73,9 @@ module.exports = {
       console.log(jobMessage(job));
     });
     console.log("");
+  },
+
+  printPipelineArgError: () => {
+    console.log(chalk.red("Not a valid pipeline URL"));
   },
 };
