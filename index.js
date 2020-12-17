@@ -15,6 +15,7 @@ const sleep = (ms) => {
 };
 
 const initApi = (host, token) => {
+  
   api = new Gitlab({
     host,
     token,
@@ -24,7 +25,8 @@ const initApi = (host, token) => {
 
 const getPipelineData = async () => {
   try {
-    return api.Pipelines.show(projectId, pipelineId);
+    const response = await api.Pipelines.show(projectId, pipelineId);
+    return response;
   } catch (e) {
     Terminal.printNetworkError();
     process.exit(0);
@@ -33,7 +35,8 @@ const getPipelineData = async () => {
 
 const getJobsData = async () => {
   try {
-    return api.Jobs.showPipelineJobs(projectId, pipelineId);
+    const response = api.Jobs.showPipelineJobs(projectId, pipelineId);
+    return response;
   } catch (e) {
     Terminal.printNetworkError();
     process.exit(0);
@@ -42,7 +45,8 @@ const getJobsData = async () => {
 
 const retryJob = async (job) => {
   try {
-    return api.Jobs.retry(projectId, job.id);
+    const response = api.Jobs.retry(projectId, job.id);
+    return response;
   } catch (e) {
     Terminal.printNetworkError();
     process.exit(0);

@@ -1,11 +1,12 @@
 {
   "name": "retry-pipelines",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "NPM package to retry Gitlab pipelines",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "semantic-release": "semantic-release"
   },
   "bin": {
     "retry-pipelines": "./index.js",
@@ -19,5 +20,9 @@
     "commander": "^6.2.1",
     "inquirer": "^7.3.3",
     "node-storage": "0.0.9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vlaraort/retry-pipelines.git"
   }
 }
